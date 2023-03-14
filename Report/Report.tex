@@ -1,0 +1,574 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% University Assignment Title Page 
+% LaTeX Template
+% Version 1.0 (27/12/12)
+%
+% This template has been downloaded from:
+% http://www.LaTeXTemplates.com
+%
+% Original author:
+% WikiBooks (http://en.wikibooks.org/wiki/LaTeX/Title_Creation)
+%
+% License:
+% CC BY-NC-SA 3.0 (http://creativecommons.org/licenses/by-nc-sa/3.0/)
+% 
+% Instructions for using this template:
+% This title page is capable of being compiled as is. This is not useful for 
+% including it in another document. To do this, you have two options: 
+%
+% 1) Copy/paste everything between \begin{document} and \end{document} 
+% starting at \begin{titlepage} and paste this into another LaTeX file where you 
+% want your title page.
+% OR
+% 2) Remove everything outside the \begin{titlepage} and \end{titlepage} and 
+% move this file to the same directory as the LaTeX file you wish to add it to. 
+% Then add \input{./title_page_1.tex} to your LaTeX file where you want your
+% title page.
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%\title{Title page with logo}
+%----------------------------------------------------------------------------------------
+%	PACKAGES AND OTHER DOCUMENT CONFIGURATIONS
+%----------------------------------------------------------------------------------------
+
+\documentclass[12pt]{article}
+\usepackage[italian]{babel}
+\usepackage[utf8x]{inputenc}
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage[colorinlistoftodos]{todonotes}
+\usepackage{float}
+\usepackage{makecell}
+
+\usepackage{hyperref}
+
+% space between caption and table
+\usepackage{caption} 
+\captionsetup[table]{skip=7pt}
+
+% dashed line
+\usepackage{array}
+\usepackage{arydshln}
+\setlength\dashlinedash{1.5pt}
+\setlength\dashlinegap{2.5pt}
+\setlength\arrayrulewidth{0.4pt}
+\def\arraystretch{1.1}
+
+\usepackage[sorting=none]{biblatex}
+\addbibresource{refs.bib}
+
+% best formatting
+\newcommand\best[1]{\textbf{\color{teal} #1}}
+
+\begin{document}
+
+\begin{titlepage}
+
+\newcommand{\HRule}{\rule{\linewidth}{0.5mm}} % Defines a new command for the horizontal lines, change thickness here
+
+\center % Center everything on the page
+ 
+%----------------------------------------------------------------------------------------
+%	HEADING SECTIONS
+%----------------------------------------------------------------------------------------
+
+\textsc{\LARGE Università degli studi di Milano-Bicocca}\\[1cm] % Name of your university/college
+\textsc{\Large Advanced Machine Learning }\\[0.3cm] % Major heading such as course name
+\textsc{\large Final Project}\\[0.1cm] % Minor heading such as course title
+
+%----------------------------------------------------------------------------------------
+%	TITLE SECTION
+%----------------------------------------------------------------------------------------
+
+\HRule \\[0.4cm]
+{ \huge \bfseries Mercari Price Prediction}\\[0.4cm] % Title of your document
+\HRule \\[1.5cm]
+ 
+%----------------------------------------------------------------------------------------
+%	AUTHOR SECTION
+%----------------------------------------------------------------------------------------
+
+\large
+\emph{Authors:}\\
+Ruben Agazzi - 844736 - r.agazzi1@campus.unimib.it \\   
+Francesco Regonesi - 844604 - f.regonesi1@campus.unimib.it   \\
+Riccardo Sartori - 845063 - r.sartori2@campus.unimib.it   \\[0.7cm]
+
+% If you don't want a supervisor, uncomment the two lines below and remove the section above
+%\Large \emph{Author:}\\
+%John \textsc{Smith}\\[3cm] % Your name
+
+%----------------------------------------------------------------------------------------
+%	DATE SECTION
+%----------------------------------------------------------------------------------------
+
+{\large January 2023}\\[1.5cm] % Date, change the \today to a set date if you want to be precise
+
+%----------------------------------------------------------------------------------------
+%	LOGO SECTION
+%----------------------------------------------------------------------------------------
+
+\includegraphics{logo.png}\\[1cm] % Include a department/university logo - this will require the graphicx package
+ 
+%----------------------------------------------------------------------------------------
+
+\vfill % Fill the rest of the page with whitespace
+
+\end{titlepage}
+
+
+\begin{abstract}
+In questo documento viene presentata una possibile strategia per il suggerimento automatico dei prezzi da associare ad articoli 
+in vendita sulla base di informazioni inserite da utenti di Mercari, un noto sito di e-commerce giapponese. Si tratta di una 
+sfida particolarmente difficile in quanto il prezzo è influenzato da diverse variabili; inoltre i dati a disposizione del modello 
+non sono sempre precisi né affidabili. Mediante l'utilizzo di tecniche di deep learning unite ad un opportuno pre-processing 
+dei dati testuali sono stati ottenuti risultati soddisfacenti che possono essere un buon punto di partenza per eventuali 
+sviluppi futuri.
+\end{abstract}
+
+\section{Introduzione}
+Lo scopo di questo progetto è quello di riuscire a fare una stima riguardante il prezzo di un prodotto messo 
+in vendita da un utente utilizzando come dati in input una descrizione del prodotto e altre informazioni, come ad 
+esempio la categoria o tipologia di prodotto e le condizioni dello stesso.
+Per raggiungere questo scopo sono state utilizzate tecniche di deep learning e di natural language processing, come 
+tokenization e tf-idf \cite{tfidf}. Particolare attenzione è stata riservata all'ottimizzazione dei modelli addestrati e alla loro valutazione. \\
+
+La realizzazione del progetto ha seguito i seguenti passi:
+\begin{itemize}
+    \item esplorazione dati: esplorazione del dataset per comprendere quali dati sono presenti e se i dati sono utilizzabili 
+	oppure no, come ad esempio nel caso in cui ci siano valori mancanti;
+    \item preprocessing dei dati: trattamento dei dati testuali e non in modo da renderli utilizzabili per l'addestramento, tenendo 
+	conto delle considerazioni effettuate durante la fase di esplorazione dei dati;
+    \item realizzazione dei modelli: creazione dei modelli di deep learning da allenare con i dati pre-processati.
+    \item allenamento e ottimizzazione dei modelli: scelta di parametri di ottimizzazione quali loss function, 
+	activation function, scelta della regolarizzazione, scelta delle features per l'allenamento e scelta della grandezza del batch.
+    \item valutazione: valutazione dei modelli allenati sulla base di metriche predeterminate.
+\end{itemize}
+
+\section{Datasets}
+Il dataset utilizzato è il training set proposto nella challenge di Kaggle sponsorizzata da Mercari \cite{kaggle}. Il test set non è 
+stato utilizzato in quanto sprovvisto dei prezzi su cui calcolare le performance dei modelli. È importante ricordare 
+che tutti i dati a disposizione sono stati inseriti manualmente da utenti reali, e potrebbero quindi non essere 
+accurati o contenere valori mancanti.
+
+Prima di dividere il dataset in train, validation e test set è stata effettuata un'analisi esplorativa dei dati 
+a disposizione e della loro distribuzione. Gli attributi originali erano otto:
+\begin{itemize}
+    \item {\tt train\_id}: identificativo intero del record;
+    \item {\tt name}: il titolo dell'annuncio di vendita;
+    \item {\tt item\_condition\_id}: la condizione di usura dell'oggetto in vendita, classificata in cinque 
+	categorie;
+    \item {\tt category\_name}: la categoria a cui appartiene l'oggetto in vendita; è possibile che vengano 
+	specificate più sotto-categorie;
+    \item {\tt brand\_name}: la marca dell'oggetto in vendita;
+    \item {\tt shipping}: valore binario che indica se la spedizione è a carico del venditore (1) o dell'acquirente (0);
+    \item {\tt item\_description}: la descrizione testuale dell'oggetto in vendita;
+    \item {\tt price}: prezzo di vendita.
+\end{itemize}
+Il dataset è di dimensioni rilevanti, è infatti composto da quasi 1.5 milioni di istanze.
+
+\paragraph{Valori mancanti} Per prima cosa è stato necessario verificare la presenza di valori mancanti o non validi. 
+In particolare sono stati identificati:
+\begin{itemize}
+    \item 6327 valori mancanti nella colonna {\tt category\_name}: queste istanze sono state rimosse in quanto il 
+	loro numero è trascurabile; inoltre sarebbe stato complesso assegnare un valore predefinito a questa colonna;
+    \item circa 630000 valori mancanti nella colonna {\tt brand\_name}: essendo questo un numero particolarmente 
+	importante non era possibile rimuovere le istanze; i valori mancanti sono stati quindi sostituiti con una semplice stringa vuota;
+    \item 4 valori mancanti nella colonna {\tt item\_description}: a questi si aggiungono quasi 82000 istanze 
+	con descrizione {\tt "no description yet"}. In entrambi i casi questi valori sono stati sostituiti da una stringa vuota;
+    \item oltre 850 prezzi pari a 0: queste istanze sono state rimosse.
+\end{itemize}
+
+\subsection{Distribuzione dei dati}
+
+\paragraph{Item condition} La condizione degli oggetti è categorizzata in cinque categorie rappresentate da numeri 
+da 1 a 5, dove 1 è in ottime condizioni e 5 è molto usurato. I dati sono molto sbilanciati: la maggior 
+parte delle istanze è in una delle prime tre categorie mentre solo pochi oggetti sono classificati come molto usurati.
+
+\paragraph{Category name} Le categorie sono strutturate in modo gerarchico. Tutti gli oggetti presentano almeno 
+tre categorie, e una piccola parte ne ha quattro o cinque. La più significativa è la prima categoria, che 
+presenta solo 10 possibili valori. La distribuzione degli oggetti nelle diverse categorie non è bilanciata, 
+tuttavia in ognuna è presente un numero significativo e sufficiente di istanze. La seconda categoria presenta 
+113 diversi valori con un forte sbilanciamento nel numero di istanze di ognuno di essi, è comunque considerata 
+sufficientemente significativa. Le restanti categorie presentano un numero di possibili valori molto elevato 
+e un supporto troppo basso per essere utilizzate come dati categorici.
+
+\paragraph{Brand name} Il marchio degli oggetti in vendita presenta un alto numero sia di valori mancanti sia 
+di valori possibili, pertanto non è sensato utilizzarlo come un dato categorico, bensì è più efficace trattarlo 
+come semplice dato testuale. Inoltre da una rapida analisi qualitativa sembra che questa colonna contenga molti 
+errori e che il suo contenuto sia spesso ripetuto in {\tt name} o {\tt item\_description}.
+
+\paragraph{Shipping} Il dato relativo alla spedizione è distribuito in modo sufficientemente bilanciato
+ sulle diverse istanze.
+
+\paragraph{Price} La grande maggioranza degli oggetti in vendita ha un prezzo inferiore a 50\$. 
+Sono comunque presenti degli outliers con prezzi molto elevati, anche oltre i 2000\$.
+
+\subsection{Pre-processing}
+Il {\tt train\_id} è stato completamente rimosso in quanto non significativo.
+
+\paragraph{} Per quanto riguarda l'encoding dei dati categorici, si è scelto di rappresentare
+la {\tt item\_condition} con \emph{one-hot encoding} e la prima e la seconda categoria 
+mediante \emph{binary encoding}. In questo modo, a fronte di performance simili \cite{binary_enc},
+viene utilizzato un numero inferiore di features rispetto al classico one-hot encoding
+(particolarmente utile per la seconda categoria, la quale può assumere 113 diversi valori).
+
+\paragraph{} La terza categoria invece è stata considerata un dato testuale ed è stata unita a 
+{\tt name}, {\tt brand\_name} e {\tt item\_description} in un'unica colonna. Su questa prima 
+di tutto è stata applicata un'operazione di lemmatization \cite{lemmatization} in modo da uniformare i termini al 
+suo interno. Successivamente, ad ogni termine è stata assegnata una categoria grammaticale di 
+appartenza (come nome o aggettivo) in modo da poter poi scegliere quali mantenere. I termini 
+rimanenti sono stati codificati su una matrice sparsa utilizzando la tecnica term 
+frequency-inverse document frequency (tf-idf), applicando una tecnica di tokenization in grado 
+di generare dei token composti da una o due parole. Inoltre sono stati eliminati i token che 
+compaiono in oltre 80\% dei documenti (stopwords e altre parole poco rilevanti) e sono stati 
+mantenuti i 10000 token più frequenti tra quelli rimasti.
+
+\section{Approccio metodologico}
+
+Il dataset è stato diviso in train, validation e test set tenendo conto della stratificazione delle 
+prime due categorie. Il 30\% dei dati è stato riservato ai test, mentre i dati restanti sono stati divisi 
+80 - 20 in training e validation set.
+
+\paragraph{}Per un'analisi preliminare è stata definita una rete sufficentemente buona da usare come benchmark e 
+su cui effettuare dei confronti su diverse tipologie di encoding e di preprocessing dei dati. 
+Per l'analisi dei risultati sono state utilizzate le seguenti metriche:
+\begin{itemize}
+    \item Mean Squared Error: utilizzata anche come funzione di loss;
+    \item Mean Squared Logarithmic Error;
+    \item Mean Absolute Percentage Error;
+    \item Mean Absolute Error.
+\end{itemize}
+Per tutti gli addestramenti effettuati è stata utilizzata una tecnica di early stopping, che permette 
+di interrompere il training se la loss non migliora di almeno 0.01 (0.001 con funzione di loss MSLE) 
+per 5 epoche consecutive.
+
+La rete sopracitata verrà in seguito chiamata rete base e utilizza Leaky ReLU ($\alpha = 0.2$) come funzione di attivazione, 
+dropout (probabilità 0.2) su ogni layer e L2 kernel regularization ($\lambda = 0.01$). L'architettura della rete è 
+composta da 8 strati di dimensione:
+\begin{center}
+	{\tt 1024 - 512 - 256 - 128 - 64 - 32 - 16 - 4}
+\end{center}
+
+Un primo test ha consentito di verificare che la codifica binary encoding utilizzata per le prime
+categorie non comportasse un calo di prestazioni rispetto al one-hot encoding.
+
+\paragraph{} Successivamente l'attenzione è stata posta sui dati testuali. Innanzitutto sono 
+state testate diverse combinazioni di tag per i token:
+\begin{enumerate}
+    \item tutti i token eccetto quelli completamente non rilevanti (SPACE, SYM, X, PUNCT);
+    \item solo nomi e nomi propri;
+    \item solo nomi, nomi propri e aggettivi;
+    \item nomi, nomi propri, aggettivi, verbi, avverbi e numeri.
+\end{enumerate}
+
+Ciò che ci si aspetta è che i token di alcuni tag siano significativamente più rilevanti di altri, ad 
+esempio parole come congiunzioni o preposizioni dovrebbero essere poco utili. L'obbiettivo di questo 
+esperimento è quindi quello di restringere il numero di token ad un insieme più piccolo ma comunque significativo.
+
+\paragraph{} Una volta individuata la combinazione di tag da utilizzare si è provato a variare il 
+numero di feature utilizzate per la vettorizzazione del testo. Ci si attende che un maggiore numero di 
+features comporti, entro un certo limite, un maggior grado di precisione del modello. Detto ciò, a 
+parità di performance è preferibile utilizzare un numero di features inferiore, così da ridurre 
+la dimensione del modello e velocizzare il training.
+
+\subsection{Ottimizzazione dei modelli}
+
+Una delle principali difficoltà incontrate riguarda la possibilità di caricare l'intero dataset in memoria:
+con 10000 features sono necessari 32GB. Questo ha reso necessario l'utilizzo di un \emph{Batch Generator} 
+che caricasse in memoria centrale un batch alla volta. Per questo motivo non è sostenibile l'utilizzo 
+di batch di piccole dimensioni (come 128 o 256 istanze) in quanto il numero di accessi in memoria 
+secondaria diventa proibitivo. Si è dunque cercato un compromesso tra il numero di update per epoca, 
+velocità del training e performance.
+
+Per aiutare nella valutazione delle reti sono stati realizzati i grafici degli errori, assoluti e relativi, commessi 
+dai modelli.
+
+\paragraph{} Per quanto riguarda la funzione di attivazione sono state testate diverse funzioni: 
+Leaky ReLU con diversi valori di $\alpha$, tanh e sigmoide.
+
+\paragraph{} Sono infine state definite tre architetture con un diverso numero di layer e di neuroni,
+ciascuna delle quali è stata ottimizzata separatamente per quanto riguarda la funzione di loss e la 
+regolarizzazione. Le tre architetture considerate sono, oltre alla rete base già presentata, una 
+rete con pochi layer più ampi (\emph{shallow}) e una rete più profonda (\emph{deep}).
+\\
+
+Rete Shallow:
+\begin{center}
+	{\tt 2048 - 1024 - 512}
+\end{center}
+
+Rete Deep:
+\begin{center}
+	{\tt 512 - 512 - 256 - 256 - 128 - 128 - 64 - 32 - 16 - 8}
+\end{center}
+
+Per quanto riguarda la regolarizzazione si intende testare varie combinazioni di kernel regularization 
+(L1, L2) e di dropout, mentre per la funzione di loss ci si è concentrati su MSE e MSLE. In particolare 
+	MSLE dovrebbe essere adatto per un dataset con una distribuzione di valori ampia, in quanto non 
+	penalizza eccessivamente errori assoluti elevati; in questo modo non viene posta troppa attenzione 
+	sui pochi oggetti molto costosi \cite{rmsle}.
+
+\section{Risultati e valutazione}
+
+\begin{table}[H]
+    \caption{Risultati ottenuti dalla rete base con diverse combinazioni di token}
+	\label{table:token}
+	\centering
+	\begin{tabular}{c | c c c c }
+		& \textbf{1} & \textbf{2} & \textbf{3} & \textbf{4}  \\
+		\hline
+		\textbf{MSE}  & 759 & 793 & 757   & \best{735}  \\
+		\hdashline
+		\textbf{MSLE} & \best{0.270}   & 0.283  & 0.281   & 0.280    \\
+		\hdashline
+		\textbf{MAPE} & \best{0.48}  & 0.54   & 0.56    & 0.55    \\
+		\hdashline
+		\textbf{MAE}  & 11.3 & 11.6  & 11.4  & \best{11.3}   \\ 
+	\end{tabular}
+	
+\end{table}
+
+\begin{table}[H]
+    \caption{Risultati ottenuti dalla rete base utilizzando la combinazione 1 di token e diversi numeri di features}
+    \label{table:nfeatures}
+	\centering
+	\begin{tabular}{c | c c c c }
+		& \textbf{1000} & \textbf{5000} & \textbf{10000} & \textbf{20000}  \\
+		\hline
+		\textbf{MSE}  & 957 & 759 & 759   & \best{728}  \\
+		\hdashline
+		\textbf{MSLE} & 0.334 & 0.296 & 0.270     & \best{0.265}    \\
+		\hdashline
+		\textbf{MAPE} & 0.60 & 0.60  & \best{0.48}    & 0.54    \\
+		\hdashline
+		\textbf{MAE}  & 12.6  & 11.8 & 11.3  & \best{11.0}   \\ 
+	\end{tabular}
+\end{table}
+
+\begin{table}[H]
+    \caption{Risultati ottenuti dalla rete base con diverse dimensioni del batch}
+    \label{table:batch}
+	\centering
+	\begin{tabular}{c | c c c c }
+		& \textbf{1024} & \textbf{512} & \textbf{2048} & \textbf{4096}  \\
+		\hline
+		\textbf{MSE}  & 759 & 775 & \best{741}   & 787 \\
+		\hdashline
+		\textbf{MSLE} & 0.270   & 0.275  & \best{0.264}   & \best{0.264}  \\
+		\hdashline
+		\textbf{MAPE} & \best{0.48}  & 0.54  & 0.51   & 0.49   \\
+		\hdashline
+		\textbf{MAE}  & 11.3 & 11.2   & \best{11.0}  & 11.3  \\ 
+	\end{tabular}
+\end{table}
+
+\begin{table}[H]
+    \caption{Risultati ottenuti dalla rete base con diverse funzioni di attivazione}
+    \label{table:activation}
+	\centering
+	\begin{tabular}{c | c c c c }
+		& \textbf{LeakyReLU (0.2)} & \textbf{Tanh} & \textbf{Sigmoide} & \textbf{LeakyReLU (0.3)}  \\
+		\hline
+		\textbf{MSE}  & \best{741}  & 1003   & 1459 & 748 \\
+		\hdashline
+		\textbf{MSLE} & 0.264  & \best{0.261} & 0.650    & 0.272   \\
+		\hdashline
+		\textbf{MAPE} & 0.51  & \best{0.50}   & 1.08    & 0.52    \\
+		\hdashline
+		\textbf{MAE}  & \best{11.0} & 11.4  & 18.0   & 11.3   \\ 
+	\end{tabular}
+\end{table}
+
+\subsection{Architetture di rete}
+
+\subsubsection*{Rete Shallow}
+
+\begin{table}[H]
+    \caption{Configurazioni testate per la rete shallow}
+	\label{table:shallow}
+	\centering
+	\begin{tabular}{ c | c c c }
+		& \textbf{Loss} & \textbf{Kernel Reg.} & \textbf{Dropout}  \\
+		\hline
+		\textbf{Shallow 1} & MSE  & L2 (0.001) 	& \makecell{0.2 input, 0.5 primo layer,\\ 0.4 i restanti}  \\
+		\hdashline
+		\textbf{Shallow 2} & MSE  & L1 (0.01)  	& \makecell{0.2 input, 0.5 primo layer,\\ 0.4 i restanti}  \\
+		\hdashline
+		\textbf{Shallow 3} & MSE  & Nessuna      & \makecell{0.2 input, 0.5 primo layer,\\ 0.4 i restanti}  \\
+		\hdashline
+		\textbf{Shallow 4} & MSE  & Nessuna 		& \makecell{0.2 input, 0.3 primo layer,\\ 0.25 i restanti} \\
+		\hdashline
+		\textbf{Shallow 5} & MSE  & Nessuna 		& 0.2 input, 0.5 sui restanti 		  \\
+		\hdashline
+		\textbf{Shallow 6} & MSLE & Nessuna     	& 0.2 input, 0.5 sui restanti		  \\
+	\end{tabular}
+\end{table}
+
+\begin{table}[H]
+    \caption{Risultati ottenuti dalla rete shallow nelle diverse configurazioni}
+    \label{table:shallowRes}
+	\centering
+	\begin{tabular}{c | c c c c c c }
+		& \textbf{1} & \textbf{2} & \textbf{3} & \textbf{4} & \textbf{5} & \textbf{6}   \\
+		\hline
+		\textbf{MSE}  & 733 & 765 & 728 & 717 & \best{705} & 805 \\
+		\hdashline
+		\textbf{MSLE} & 0.286   & 0.290    & 0.252   & 0.273   & 0.253   & \best{0.207}   \\
+		\hdashline
+		\textbf{MAPE} & 0.59   & 0.57    & 0.50   & 0.58    & 0.51   & \best{0.37}   \\
+		\hdashline
+		\textbf{MAE}  & 11.6  & 11.7  & 10.9  & 11.2  & 10.9  & \best{10.2}  \\
+	\end{tabular}
+\end{table}
+
+\subsubsection*{Rete Base}
+
+\begin{table}[H]
+    \caption{Configurazioni testate per la rete base}
+	\centering
+	\begin{tabular}{ c | c c c }
+		& \textbf{Loss} & \textbf{Kernel Reg.} & \textbf{Dropout}  \\
+		\hline
+		\textbf{Base 1} & MSLE 	& L2(0.001) & Assente  \\
+		\hdashline
+		\textbf{Base 2} & MSE 	& L1(0.01)  & Assente  \\
+		\hdashline
+		\textbf{Base 3} & MSLE 	& L1L2(0.01)      & Assente  \\
+		\hdashline
+		\textbf{Base 4} & MSLE 	& Nessuna   & \makecell{0.2 input e primi tre layer,\\ 0.1 i successivi}  \\
+	\end{tabular}
+\end{table}
+
+\begin{table}[H]
+    \caption{Risultati ottenuti dalla rete base nelle diverse configurazioni}
+    \label{table:baseRes}
+	\centering
+	\begin{tabular}{c | c c c c  }
+		& \textbf{1} & \textbf{2} & \textbf{3} & \textbf{4} \\
+		\hline
+		\textbf{MSE}  & 875	& \best{757} & 804 & 793 \\
+		\hdashline
+		\textbf{MSLE} & 0.223 & 0.294  & 0.219  & \best{0.211} \\
+		\hdashline
+		\textbf{MAPE} & 0.41 & 0.59  & 0.41  & \best{0.36}  \\
+		\hdashline
+		\textbf{MAE}  & 10.7 & 12.1  & 10.5 & \best{10.2}  \\
+	\end{tabular}
+\end{table}
+
+\subsubsection*{Rete Deep}
+
+\begin{table}[H]
+    \caption{Configurazioni testate per la rete deep}
+	\centering
+	\begin{tabular}{ c | c c c }
+		& \textbf{Loss} & \textbf{Kernel Reg.} & \textbf{Dropout}  \\
+		\hline
+		\textbf{Deep 1} & MSE & L2(0.001) 	& 0.2 su tutti i layer  \\ 
+		\hdashline
+		\textbf{Deep 2} & MSE & L2(0.01)  	& Assente  \\
+		\hdashline
+		\textbf{Deep 3} & MSLE & L2(0.001)   & 0.2 su tutti i layer  \\
+		\hdashline
+		\textbf{Deep 4} & MSLE & Nessuna     & \makecell{0.3 input e primi 6 layer, \\0.2 i successivi}  \\
+		\hdashline
+		\textbf{Deep 5} & MSLE & Nessuna     & \makecell{0.2 input, 0.5 primi tre layer, \\ 0.4 tre layer, 0.2 i restanti}  \\
+		\hdashline
+		\textbf{Deep 6} & MSLE & Nessuna     & 0.2 input e primi 4 layer, 0.1 dopo  \\
+		\hdashline
+		\textbf{Deep 7} & MSLE & Nessuna     & solo 0.2 su input  \\
+	\end{tabular}
+\end{table}
+
+\begin{table}[H]
+    \caption{Risultati ottenuti dalla rete deep nelle diverse configurazioni}
+    \label{table:deepRes}
+	\centering
+	\begin{tabular}{c | c c c c c c c }
+		& \textbf{1} & \textbf{2} & \textbf{3} & \textbf{4} & \textbf{5} & \textbf{6} & \textbf{7}  \\
+		\hline
+		\textbf{MSE}  & \best{711} & 747 & 1066  & 1000  & 1036  & 843 & 729   \\
+		\hdashline
+		\textbf{MSLE} & 0.280 & 0.310  & 0.261 & 0.253 & 0.264 & 0.238 & \best{0.217} \\
+		\hdashline
+		\textbf{MAPE} & 0.57  & 0.67  & 0.44  & 0.39 & 0.39 & \best{0.36} & 0.41 \\
+		\hdashline
+		\textbf{MAE}  & 11.3  & 12.3 & 11.7 & 11.4  & 11.7 & 10.7 & \best{10.3} \\
+	\end{tabular}
+\end{table}
+
+\section{Discussione dei risultati}
+
+\paragraph{Combinazioni di token} Le performance migliori sono state ottenute dalla prima e 
+dall'ultima combinazione di token (tabella \ref{table:token}); la scelta finale è ricaduta 
+sulla prima in quanto i risultati sono stati complessivamente migliori, in particolare per 
+quanto riguarda l'errore percentuale.
+
+\paragraph{Numero di features} Dagli esperimenti effettuati (tabella \ref{table:nfeatures}) è risultato che 10000 è il numero di 
+features che permette di ottenere il miglior compromesso tra performance e complessità 
+computazionale del training. Utilizzare 20000 features infatti non comporta un miglioramento 
+significativo, comincia inoltre ad essere problematico dal punto di vista delle risorse
+ hardware a disposizione.
+
+\paragraph{Dimensione del batch} Osservando i risultati ottenuti (tabella \ref{table:batch}) è stata scelta una 
+dimensione del batch di 2048 istanze, la quale si traduce in circa 400 update per ogni 
+epoca. Una dimensione inferiore, oltre a non ottenere risultati migliori, rallenta l'addestramento.
+
+\paragraph{Funzione di attivazione} Sono stati condotti dei test su diverse funzioni di 
+attivazione (tabella \ref{table:activation}) dai quali è emerso che la funzione migliore è Leaky ReLU con 
+parametro $\alpha = 0.2$. La funzione Tanh ha ottenuto dei risultati promettenti ma con 
+una velocità di training molto inferiore, pertanto non è stata utilizzata nelle successive
+ fasi di ottimizzazione.
+
+\subsection{Analisi risultati}
+\paragraph{Architettura di rete} Tutte le diverse architetture di rete, ottimizzate separatamente, 
+hanno ottenuto buoni risultati, tra loro simili (tabelle \ref{table:shallow} - \ref{table:deepRes}). 
+Come prevedibile, sono emerse delle differenze nel processo di ottimizzazione per quanto riguarda le 
+configurazioni ottimali di regolarizzazione. Inoltre, è opportuno sottolineare che il numero di parametri 
+delle diverse architetture è abbastanza diverso: la shallow ha molti più parametri delle altre due, la 
+base ne ha un numero intermedio, la deep ne ha di meno.
+
+\paragraph{Funzione di loss} Dagli esperimenti condotti sulle diverse architetture in fase
+di ottimizzazione dei modelli è emerso che i modelli addestrati con funzione di loss MSLE
+hanno performance complessivamente migliori di quelli addestrati con funzione di loss MSE. 
+In particolare i primi ottengono valori di MSE leggermente più elevati, ma valori di MAPE e 
+MSLE significativamente più bassi.
+
+\begin{figure}[H]
+	\includegraphics[width=0.9\textwidth]{./images/zoomed_rel_error_Shallow 5.jpeg}
+	\centering
+	\caption{Distribuzione degli errori relativi ottenuti dalla rete shallow con funzione di loss MSE, ad eccezione degli outlier.}
+\end{figure}
+
+\begin{figure}[H]
+	\includegraphics[width=0.9\textwidth]{./images/zoomed_rel_error_Shallow 6.jpeg}
+	\centering
+	\caption{Distribuzione degli errori relativi ottenuti dalla rete shallow con funzione di loss MSLE, ad eccezione degli outlier.}
+\end{figure}
+
+\paragraph{Regolarizzazione} Per quanto riguarda la \emph{kernel regularization}, si è notato
+come la regolarizzazione L2 porti in generale risultati migliori della L1. Inoltre, questo tipo
+di regolarizzazione risulta efficace quasi solo nei modelli addestrati con funzione di loss MSE.
+Invece, nei modelli addestrati con funzione di loss MSLE sono stati ottenuti risultati migliori
+senza applicare L2.
+
+Il dropout è in generale risultato utile per entrambe le tipologie di modelli e in tutte le
+architetture: la rete shallow ne beneficia in modo particolare e sfrutta bene probabilità di drop 
+alte, mentre le restanti architetture funzionano meglio con un dropout più leggero.
+
+\section{Conclusioni}
+Il suggerimento automatico di un prezzo basato su dati testuali e 
+inseriti manualmente da un utente è una sfida ardua. Il risultato più interessante emerso dagli esperimenti 
+condotti riguarda l'efficacia dell'utilizzo di MSLE come funzione di loss invece che MSE, mentre non
+è emersa un'architettura chiaramente migliore delle altre tra quelle testate. 
+
+\paragraph{} Per un task di questo tipo la fase di preprocessing dei dati testuali
+ha un'importanza critica, in quanto definisce la tipologia ed il numero delle features che dovranno
+essere utilizzate in fase di training. Per questo motivo, un possibile sviluppo futuro potrebbe riguardare 
+l'utilizzo di tecniche di \emph{word embedding} come Word2Vec o modelli \emph{transformers} come 
+BERT per il trattamento di questi dati.
+
+\printbibliography
+
+\end{document}
